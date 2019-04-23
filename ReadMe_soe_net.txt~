@@ -1,0 +1,54 @@
+This ReadMe file explains how to use the code for trainable SOE-Net
+work by Isma Hadji (hadjisma@cse.yorku.ca) for her internship project at Huawei Canada from May 2018 to September 2018.
+========================================================================================================================
+
+* This folder contain all necessary functions to build SOE-Net
+
+Document:
+=========
+Please refer to SOE_NET_report.pdf for detailed description of the proposed building blocks.
+
+Requirements:
+============
+* This code has been tested under the following environment settings:
+	- cuda 9.0
+	- cudnn 7.1
+	- tensorflow 1.8
+	- opencv 3.4
+
+Relevant scripts:
+=================
+
+* SOE_Net_model_full.py
+	- All necessary functions to build a trainable SOE_Net are contained in this script.
+* init_SOE_Net.py
+	- All functions to initialize SOE_Net's building blocks are here.
+* input_data.py
+	- All functions used in the input pipeline.
+* util.py
+	- functions to visualize videos and results.
+* SOE_MSOE_TEST.py
+	- full fledged main code with examples to build and extract SOE, SOE_NET, MSOE .. features. 
+	It needs as input:
+	1) a path to a datasets folder
+	2) a dataset folder
+	3) a sample video to be used for testing
+	4) a GPU ID.
+	** This code can be used to extract features to be used with the video semantic segmentation tool.
+* SOE_Net.py
+	- full fledged trading code for SOE_Net.
+
+Helper script:
+==============
+
+* shell_script_helpers folder contains helper bash scripts that automate the entire process:
+	- Video2Clips.sh helper bash script to prepare input data pipeline. (i.e. convert videos to clips that are fed to SOE_Net)
+	- SOE_MSOE_demo.sh calls all necessary functions (including the data preparation scripts) to extract SOE, SOE_NET, MSOE features.
+	It needs as input:
+	1) a path to a datasets folder
+	2) a dataset folder
+	3) a sample video to be used for testing
+	4) a GPU ID.
+
+
+
