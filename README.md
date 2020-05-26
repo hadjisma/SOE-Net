@@ -1,7 +1,6 @@
 ## SOE-Net
 
-This ReadMe file explains how to use the code for trainable SOE-Net.
-========================================================================================================================
+* This ReadMe file explains how to use the code for trainable SOE-Net.
 
 * This repo contain all necessary functions to build SOE-Net
 
@@ -36,7 +35,7 @@ This ReadMe file explains how to use the code for trainable SOE-Net.
 * if you use this code in your research please cite the corresponding paper:
 
 ```
-@{Hadji2017,
+@InProceedings{Hadji2017,
 author={I. Hadji and R. P. Wildes},
 title={A Spatiotemporal Oriented Energy Network for Dynamic Texture Recognition},
 booktitle={ICCV}
