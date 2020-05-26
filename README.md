@@ -1,11 +1,9 @@
 ## SOE-Net
 
 This ReadMe file explains how to use the code for trainable SOE-Net.
-
-work by Isma Hadji (hadjisma@cse.yorku.ca) 
 ========================================================================================================================
 
-* This folder contain all necessary functions to build SOE-Net
+* This repo contain all necessary functions to build SOE-Net
 
 ## Requirements:
 
@@ -31,8 +29,6 @@ work by Isma Hadji (hadjisma@cse.yorku.ca)
 	1) a path to a datasets folder
 	2) a dataset folder
 	3) a sample video to be used for testing
-
-* This code can be used to extract features to be used with the video segmentation code.
 
 
 ## Citation
