@@ -1,9 +1,9 @@
 ###################################################
-# SOE_NET building blocks
+# SOE_NET functions
 # Coded by Isma Hadji (hadjisma@cse.yorku.ca)
 ###################################################
 """Building the SOE_Net network.
-Implements the functions for model building.
+Implements the inference functions for model building.
 """
 import tensorflow as tf
 import numpy as np
@@ -14,11 +14,15 @@ def power(v,p):
     vp = tf.pow(v, p, name='None')
     return vp
 
-def S3D(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot):
+def S3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot):
     SteeredConv = power(ox,3)*G_a + 3*power(ox,2)*oy*G_b + 3*ox*power(oy,2)*G_c + power(oy,3)*G_d + 3*power(ox,2)*ot*G_e + 6*ox*oy*ot*G_f + 3*power(oy,2)*ot*G_g + 3*ox*power(ot,2)*G_h + 3*oy*power(ot,2)*G_i + power(ot,3)*G_j   
     return SteeredConv
 
-def S2D(G_a, G_b, G_c, G_d, theta_in):
+def S3DG2 (G2_a, G2_b, G2_c, G2_d, G2_e, G2_f, ox,oy,ot):
+    SteeredConv = power(ox,2)*G2_a + 2*ox*oy*G2_b + power(oy,2)*G2_c + 2*ox*ot*G2_d + 2*oy*ot*G2_e + power(ot,2)*G2_f
+    return SteeredConv
+
+def S2DG3(G_a, G_b, G_c, G_d, theta_in):
     theta = np.float32(np.divide(np.pi, 180.0) * theta_in)
     
     G_ka = power(np.cos(theta),3)
@@ -30,7 +34,19 @@ def S2D(G_a, G_b, G_c, G_d, theta_in):
     
     return G
 
-def MSR(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot):
+def S2DG2(G_a, G_b, G_c, theta_in):
+    
+    theta = np.float32(np.divide(np.pi, 180.0) * theta_in)
+    
+    G_ka = power(np.cos(theta),2)
+    G_kb = -2*(np.cos(theta)*np.sin(theta))
+    G_kc =  power(np.sin(theta),2)    
+    
+    G = G_ka*G_a + G_kb*G_b + G_kc*G_c
+    
+    return G
+
+def MSR3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot):
     
     n = np.array([ox, oy, ot])
     n  = np.divide(n, np.linalg.norm(n))
@@ -47,21 +63,51 @@ def MSR(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot):
 
     ub = np.cross(n,ua)
     ub = ub / np.linalg.norm(ub);
-    
+    # e.g. here we use FWR
     SteeredConv = []
     M_or = np.array([np.cos(0) * ua + np.sin(0) * ub ])
-    SteeredConv += [tf.square(S3D(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    SteeredConv += [tf.square(S3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
     M_or = np.array([np.cos((np.pi/4)) * ua + np.sin((np.pi/4)) * ub ])
-    SteeredConv += [tf.square(S3D(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    SteeredConv += [tf.square(S3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
     M_or = np.array([np.cos(2*(np.pi/4)) * ua + np.sin(2*(np.pi/4)) * ub ])
-    SteeredConv += [tf.square(S3D(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    SteeredConv += [tf.square(S3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
     M_or = np.array([np.cos(3*(np.pi/4)) * ua + np.sin(3*(np.pi/4)) * ub ])
-    SteeredConv += [tf.square(S3D(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    SteeredConv += [tf.square(S3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, M_or[0,0],M_or[0,1],M_or[0,2]))]
     
     SteeredConv = tf.concat(axis=4, values=SteeredConv, name='concatSOE')
     SteeredConv = tf.reduce_sum(SteeredConv, axis=4, keepdims=True)
     return SteeredConv
 
+def MSR3DG2 (G2_a, G2_b, G2_c, G2_d, G2_e, G2_f, ox,oy,ot):
+    n = np.array([ox, oy, ot])
+    n  = np.divide(n, np.linalg.norm(n))
+    
+    e1 = np.array([1.0,0.0,0.0], dtype = np.float32)
+    e2 = np.array([0.0,1.0,0.0], dtype = np.float32)
+    
+    if ( np.absolute(np.arccos(np.dot(n, e1)/np.linalg.norm(n))) > np.absolute(np.arccos(np.dot(n, e2)/np.linalg.norm(n))) ):
+        ua = np.cross(n,e1)
+    else:
+        ua = np.cross(n,e2)
+    
+    ua = ua / np.linalg.norm(ua)
+
+    ub = np.cross(n,ua)
+    ub = ub / np.linalg.norm(ub);
+    
+    # e.g. here we use TPR
+    SteeredConv = []
+    # TODO: force two path rectification here
+    M_or = np.array([np.cos(0) * ua + np.sin(0) * ub ])
+    SteeredConv += [tf.square(S3DG2(G2_a, G2_b, G2_c, G2_d, G2_e, G2_f, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    M_or = np.array([np.cos((np.pi/3)) * ua + np.sin((np.pi/3)) * ub ])
+    SteeredConv += [tf.square(S3DG2(G2_a, G2_b, G2_c, G2_d, G2_e, G2_f, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    M_or = np.array([np.cos(2*(np.pi/3)) * ua + np.sin(2*(np.pi/3)) * ub ])
+    SteeredConv += [tf.square(S3DG2(G2_a, G2_b, G2_c, G2_d, G2_e, G2_f, M_or[0,0],M_or[0,1],M_or[0,2]))]
+    
+    SteeredConv = tf.concat(axis=4, values=SteeredConv, name='concatSOE')
+    SteeredConv = tf.reduce_sum(SteeredConv, axis=4, keepdims=True)
+    return SteeredConv
 
 def conv3d(name, in_data, x, y, t):
     #fx = tf.Variable(fx, dtype=tf.float32, name="fx")
@@ -129,7 +175,7 @@ def SC3D(name, in_data, basis, orientations, bias):
         oy = orientations[ch,1]
         ot = orientations[ch,2]
         
-        conv += [S3D(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot)]
+        conv += [S3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot)]
     conv = tf.concat(axis=4, values=conv, name='concatG')
     
     soe_net_conv = conv
@@ -138,39 +184,96 @@ def SC3D(name, in_data, basis, orientations, bias):
         
     return soe_net_conv
 
-def MSC3D(name, in_data, basis, orientations, bias):
+def MSC3D(name, in_data, basis, orientations, bias, filter_type="G2"):
     
     soe_net_conv = []
-    
-    G_a = conv3d('G_a', in_data, basis[0,:], basis[3,:], basis[3,:])
-    G_b = conv3d('G_b', in_data, basis[2,:], basis[1,:], basis[3,:])
-    G_c = conv3d('G_c', in_data, basis[1,:], basis[2,:], basis[3,:])
-    G_d = conv3d('G_d', in_data, basis[3,:], basis[0,:], basis[3,:])
-    G_e = conv3d('G_e', in_data, basis[2,:], basis[3,:], basis[1,:])
-    G_f = conv3d('G_f', in_data, basis[4,:], basis[1,:], basis[1,:])
-    G_g = conv3d('G_g', in_data, basis[3,:], basis[2,:], basis[1,:])
-    G_h = conv3d('G_h', in_data, basis[1,:], basis[3,:], basis[2,:])
-    G_i = conv3d('G_j', in_data, basis[3,:], basis[1,:], basis[2,:])
-    G_j = conv3d('G_i', in_data, basis[3,:], basis[3,:], basis[0,:])
-    
-    conv = []
-    for ch in range(orientations.shape[0]):
-        #ox = tf.Variable(orientations[ch,0], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="ox")
-        #oy = tf.Variable(orientations[ch,1], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="oy")
-        #ot = tf.Variable(orientations[ch,2], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="ot")
-        ox = orientations[ch,0]
-        oy = orientations[ch,1]
-        ot = orientations[ch,2]
+    if filter_type is "G3":
+        G_a = conv3d('G_a', in_data, basis[0,:], basis[3,:], basis[3,:])
+        G_b = conv3d('G_b', in_data, basis[2,:], basis[1,:], basis[3,:])
+        G_c = conv3d('G_c', in_data, basis[1,:], basis[2,:], basis[3,:])
+        G_d = conv3d('G_d', in_data, basis[3,:], basis[0,:], basis[3,:])
+        G_e = conv3d('G_e', in_data, basis[2,:], basis[3,:], basis[1,:])
+        G_f = conv3d('G_f', in_data, basis[4,:], basis[1,:], basis[1,:])
+        G_g = conv3d('G_g', in_data, basis[3,:], basis[2,:], basis[1,:])
+        G_h = conv3d('G_h', in_data, basis[1,:], basis[3,:], basis[2,:])
+        G_i = conv3d('G_j', in_data, basis[3,:], basis[1,:], basis[2,:])
+        G_j = conv3d('G_i', in_data, basis[3,:], basis[3,:], basis[0,:])
+        
+        conv = []
+        for ch in range(orientations.shape[0]):
+            #ox = tf.Variable(orientations[ch,0], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="ox")
+            #oy = tf.Variable(orientations[ch,1], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="oy")
+            #ot = tf.Variable(orientations[ch,2], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="ot")
+            ox = orientations[ch,0]
+            oy = orientations[ch,1]
+            ot = orientations[ch,2]
+                
+            conv += [MSR3DG3(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot)]
+        conv = tf.concat(axis=4, values=conv, name='concatG')
+        
+        soe_net_conv = conv
+        #soe_net_conv = tf.nn.bias_add(soe_net_conv, bias)
+    elif filter_type is "G2":
+        G2_a = conv3d('G2_a', in_data, basis[0,:], basis[1,:], basis[1,:])
+        G2_b = conv3d('G2_b', in_data, basis[2,:], basis[3,:], basis[1,:])
+        G2_c = conv3d('G2_c', in_data, basis[1,:], basis[0,:], basis[1,:])
+        G2_d = conv3d('G2_d', in_data, basis[2,:], basis[1,:], basis[3,:])
+        G2_e = conv3d('G2_e', in_data, basis[1,:], basis[2,:], basis[3,:])
+        G2_f = conv3d('G2_f', in_data, basis[1,:], basis[1,:], basis[0,:])
+        # STEP 2: ORIENT CONVOLUTION
+        conv = []
+        for ch in range(orientations.shape[0]):
+            #ox = tf.Variable(orientations[ch,0], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="ox")
+            #oy = tf.Variable(orientations[ch,1], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="oy")
+            #ot = tf.Variable(orientations[ch,2], trainable=cfg.ORIENTATION_TRAINABLE, dtype=tf.float32, name="ot")
+            ox = orientations[ch,0]
+            oy = orientations[ch,1]
+            ot = orientations[ch,2]
             
-        conv += [MSR(G_a, G_b, G_c, G_d, G_e, G_f, G_g, G_h, G_i, G_j, ox,oy,ot)]
-    conv = tf.concat(axis=4, values=conv, name='concatG')
+            conv += [MSR3DG2(G2_a, G2_b, G2_c, G2_d, G2_e, G2_f, ox,oy,ot)]
+        conv = tf.concat(axis=4, values=conv, name='concatG2')
+        #soe_net_conv = tf.nn.bias_add(soe_net_conv, bias)
+        
     
-    soe_net_conv = conv
-    #soe_net_conv = tf.nn.bias_add(soe_net_conv, bias)
     
         
     return soe_net_conv
 
+def SC2D(name, in_data, basis, numo, bias,filter_type="G2"):
+    
+    soe_net_conv = []
+    if filter_type is "G3":
+        G3_a = conv2d('G3_a', in_data, basis[0,:], basis[1,:])
+        G3_b = conv2d('G3_b', in_data, basis[2,:], basis[3,:])
+        G3_c = conv2d('G3_c', in_data, basis[4,:], basis[5,:])
+        G3_d = conv2d('G3_d', in_data, basis[6,:], basis[7,:])
+            
+        delta_theta = 180.0/numo
+        conv = []
+        for ch in range(numo):
+            theta_in = delta_theta*ch
+            conv += [S2DG3(G3_a, G3_b, G3_c, G3_d, theta_in)]
+                
+        conv = tf.concat(axis=4, values=conv, name='concatG3')
+        soe_net_conv = conv
+        #soe_net_conv = tf.nn.bias_add(soe_net_conv, bias)  
+    elif filter_type is "G2":
+        
+        G3_a = conv2d('G3_a', in_data, basis[0,:], basis[1,:])
+        G3_b = conv2d('G3_b', in_data, basis[2,:], basis[2,:])
+        G3_c = conv2d('G3_c', in_data, basis[1,:], basis[0,:])
+            
+        delta_theta = 180.0/numo
+        conv = []
+        for ch in range(numo):
+            theta_in = delta_theta*ch
+            conv += [S2DG2(G3_a, G3_b, G3_c, theta_in)]
+                
+        conv = tf.concat(axis=4, values=conv, name='concatG3')
+        soe_net_conv = conv
+        #soe_net_conv = tf.nn.bias_add(soe_net_conv, bias)
+        
+    return soe_net_conv
 
 def TPR(name, C):
     C_plus_minus = []
@@ -280,6 +383,14 @@ def SP3D(name, in_data, numL, L):
     st_pool = st_pool[:,::T,::T,::T,:]
     return st_pool
 
+def SP2D(name, in_data, numL, L):
+    
+    T = STPS(numL, L)
+    g_filter = STPF(name, numL, L)
+    st_pool = conv3d('STPool', in_data, g_filter, g_filter, g_filter)
+    st_pool = st_pool[:,:,::T,::T,:]
+    return st_pool
+
 def CP3D(name, in_data, L):
         
     cc_filter = CPP(name, cfg.NUM_DIRECTIONS,L+1, cfg.REC_STYLE)
@@ -317,3 +428,231 @@ def FCL(name, in_data, weight, bias, dropout):
         fc = tf.nn.relu(fc, name=name)
         fc = tf.nn.dropout(fc, dropout)
     return fc
+
+def get_MSOE(video, basis, orientations, biases):
+    
+    MSOE = MSC3D('msoe', video, basis, orientations, biases, filter_type="G3")
+    MSOE_final = DivNorm3d('msoe_norm', MSOE, cfg.EPSILON)
+    
+    return MSOE_final
+
+
+def get_SOE(video, basis, orientations, biases):
+    
+    SOE = SC3D('soe', video, basis, orientations, biases)
+    SOE_rec = FWR('soe_rec', SOE)
+    SOE_final = DivNorm3d('soe_norm', SOE_rec, cfg.EPSILON)
+    
+    return SOE_final
+
+def get_SO(video, basis, numo, bias):
+    
+    SO = SC2D('so', video, basis['basis2d1'], numo, bias)
+    SO_rec = FWR('so_rec', SO)
+    SO_final = DivNorm3d('so_norm', SO_rec, cfg.EPSILON)
+    
+    return SO_final
+
+
+def SOE_Net(video, basis, orientations, biases):
+    
+    with tf.name_scope('Layer1'):
+        conv1 = SC3D('conv1', video, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec1 = TPR('Rec1', conv1)
+        else:
+            rec1 = FWR('Rec1', conv1)
+            
+        norm1 = DivNorm3d('norm1', rec1, cfg.EPSILON)
+        
+        sp1 = SP3D('sp1', norm1, cfg.NUML, 0)
+        cp1 = CP3D('cp1', sp1, 0)
+	print sp1, cp1        
+    with tf.name_scope('Layer2'):
+        conv2 = SC3D('conv2', cp1, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec2 = TPR('Rec2', conv2)
+        else:
+            rec2 = FWR('Rec2', conv2)
+            
+        norm2 = DivNorm3d('norm2', rec2, cfg.EPSILON)
+        
+        sp2 = SP3D('sp2', norm2, cfg.NUML, 1)
+        cp2 = CP3D('cp2', sp2, 1)
+        print sp2, cp2
+    with tf.name_scope('Layer3'):
+        conv3 = SC3D('conv3', cp2, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec3 = TPR('Rec3', conv3)
+        else:
+            rec3 = FWR('Rec3', conv3)
+            
+        norm3 = DivNorm3d('norm3', rec3, cfg.EPSILON)
+        
+        sp3 = SP3D('sp3', norm3, cfg.NUML, 2)
+        cp3 = CP3D('cp3', sp3, 2)  
+        print sp3, cp3
+    with tf.name_scope('Layer4'):
+        conv4 = SC3D('conv4', cp3, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec4 = TPR('Rec4', conv4)
+        else:
+            rec4 = FWR('Rec4', conv4)
+            
+        norm4 = DivNorm3d('norm4', rec4, cfg.EPSILON)
+        feat = GSP('GSP',norm4)
+        
+    return feat
+
+def MSOE_Net(video, basis, orientations, biases):
+    # TODO: REMOVE TWO PATH RECTIFICATION FROM HERE
+    with tf.name_scope('Layer1'):
+        conv1 = MSC3D('conv1', video, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec1 = TPR('Rec1', conv1)
+        else:
+            rec1 = FWR('Rec1', conv1)
+            
+        norm1 = DivNorm3d('norm1', rec1, cfg.EPSILON)
+        
+        sp1 = SP2D('sp1', norm1, cfg.NUML, 0)
+        cp1 = CP3D('cp1', sp1, 0)
+	print sp1, cp1        
+    with tf.name_scope('Layer2'):
+        conv2 = MSC3D('conv2', cp1, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec2 = TPR('Rec2', conv2)
+        else:
+            rec2 = FWR('Rec2', conv2)
+            
+        norm2 = DivNorm3d('norm2', rec2, cfg.EPSILON)
+        
+        sp2 = SP2D('sp2', norm2, cfg.NUML, 1)
+        cp2 = CP3D('cp2', sp2, 1)
+        print sp2, cp2
+    with tf.name_scope('Layer3'):
+        conv3 = MSC3D('conv3', cp2, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec3 = TPR('Rec3', conv3)
+        else:
+            rec3 = FWR('Rec3', conv3)
+            
+        norm3 = DivNorm3d('norm3', rec3, cfg.EPSILON)
+        
+        sp3 = SP2D('sp3', norm3, cfg.NUML, 2)
+        cp3 = CP3D('cp3', sp3, 2)  
+        print sp3, cp3
+    with tf.name_scope('Layer4'):
+        conv4 = MSC3D('conv4', cp3, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec4 = TPR('Rec4', conv4)
+        else:
+            rec4 = FWR('Rec4', conv4)
+            
+        norm4 = DivNorm3d('norm4', rec4, cfg.EPSILON)
+        sp4 = SP2D('sp4', norm4, cfg.NUML, 3)
+        cp4 = CP3D('cp4', sp4, 3)  
+        print sp4, cp4
+        
+    return cp1, cp2, cp3, cp4
+
+def SO_Net(video, basis, orientations, biases):
+    
+    with tf.name_scope('Layer1'):
+        conv1 = SC2D('conv1', video, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec1 = TPR('Rec1', conv1)
+        else:
+            rec1 = FWR('Rec1', conv1)
+            
+        norm1 = DivNorm3d('norm1', rec1, cfg.EPSILON)
+        
+        sp1 = SP2D('sp1', norm1, cfg.NUML, 0)
+        cp1 = CP3D('cp1', sp1, 0)
+	print sp1, cp1        
+    with tf.name_scope('Layer2'):
+        conv2 = SC2D('conv2', cp1, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec2 = TPR('Rec2', conv2)
+        else:
+            rec2 = FWR('Rec2', conv2)
+            
+        norm2 = DivNorm3d('norm2', rec2, cfg.EPSILON)
+        
+        sp2 = SP2D('sp2', norm2, cfg.NUML, 1)
+        cp2 = CP3D('cp2', sp2, 1)
+        print sp2, cp2
+    with tf.name_scope('Layer3'):
+        conv3 = SC2D('conv3', cp2, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec3 = TPR('Rec3', conv3)
+        else:
+            rec3 = FWR('Rec3', conv3)
+            
+        norm3 = DivNorm3d('norm3', rec3, cfg.EPSILON)
+        
+        sp3 = SP2D('sp3', norm3, cfg.NUML, 2)
+        cp3 = CP3D('cp3', sp3, 2)  
+        print sp3, cp3
+    with tf.name_scope('Layer4'):
+        conv4 = SC2D('conv4', cp3, basis, orientations, biases)
+        if cfg.REC_STYLE == 'two_path':
+            rec4 = TPR('Rec4', conv4)
+        else:
+            rec4 = FWR('Rec4', conv4)
+            
+        norm4 = DivNorm3d('norm4', rec4, cfg.EPSILON)
+        sp4 = SP2D('sp4', norm4, cfg.NUML, 3)
+        cp4 = CP3D('cp4', sp4, 3)  
+        print sp4, cp4
+        
+    return cp1, cp2, cp3, cp4
+
+def fc_layers(feat, fc_weights, fc_biases, dropout):
+     
+    with tf.name_scope('FC1'):
+        fcl1 = FCL('fcl1', feat, fc_weights['wd1'], fc_biases['bd1'], dropout)
+	print fcl1
+    with tf.name_scope('FC2'):
+        fcl2 = FCL('fcl2', fcl1, fc_weights['wd2'], fc_biases['bd2'], dropout)
+	print fcl2
+    with tf.name_scope('FC3'):
+        fcl3 = FCL('fcl3', fcl2, fc_weights['wout'], fc_biases['bout'], dropout)
+    	print fcl3
+    
+    return fcl3
+
+def average_gradients(tower_grads):
+  average_grads = []
+  for grad_and_vars in zip(*tower_grads):
+    grads = []
+    for g, _ in grad_and_vars:
+      expanded_g = tf.expand_dims(g, 0)
+      grads.append(expanded_g)
+    grad = tf.concat(grads, 0)
+    grad = tf.reduce_mean(grad, 0)
+    v = grad_and_vars[0][1]
+    grad_and_var = (grad, v)
+    average_grads.append(grad_and_var)
+  return average_grads
+
+def tower_loss(name_scope, logit, labels):
+  cross_entropy_mean = tf.reduce_mean(
+                  tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels,logits=logit)
+                  )
+  tf.summary.scalar(
+                  name_scope + '_cross_entropy',
+                  cross_entropy_mean
+                  )
+  weight_decay_loss = tf.get_collection('losses')
+  tf.summary.scalar(name_scope + '_weight_decay_loss', tf.reduce_mean(weight_decay_loss) )
+
+  # Calculate the total loss for the current tower.
+  total_loss = cross_entropy_mean + weight_decay_loss 
+  tf.summary.scalar(name_scope + '_total_loss', tf.reduce_mean(total_loss) )
+  return total_loss
+
+def tower_accuracy(logit, labels):
+  correct_pred = tf.equal(tf.argmax(logit, 1), labels)
+  accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+  return accuracy

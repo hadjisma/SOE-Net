@@ -2,7 +2,7 @@
 
 * This ReadMe file explains how to use the code for trainable SOE-Net.
 
-* This repo contain all necessary functions to build SOE-Net
+* This repo contains all necessary functions to build SOE-Net.
 
 ## Requirements:
 

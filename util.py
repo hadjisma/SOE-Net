@@ -7,6 +7,22 @@ e.g: visualzation functions
 """
 import cv2
 import numpy as np
+from tensorflow.python.tools import inspect_checkpoint as chkp
+import tensorflow as tf
+#import matplotlib.pyplot as plt
+def CountTrainableVariables():
+    return np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])
+
+def InspectTrainedModel(path):
+    chkp.print_tensors_in_checkpoint_file(path, tensor_name='fc1', all_tensors=False)
+    
+    
+def softmax(fc):
+    nom = np.exp(fc)
+    denom = np.sum(nom, axis=1)
+    denom = np.tile(denom[:,np.newaxis], fc.shape[1])
+    return nom/denom #np.exp(fc) / np.sum(np.exp(fc), axis=1)    
+
 
 def VideoVisualization (data):
     for i in range(np.shape(data)[0]):

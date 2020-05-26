@@ -41,20 +41,71 @@ def initOrientations (method,speeds,num_directions):
     
     return orientations
 
-def initSeparableFilters (name, num_taps):
+def initSeparableFilters (name, num_taps, filter_type):
     
+    if filter_type is "G3":    
+        sampling_rate = 0.5
+        C = 0.1840
+        t = np.multiply(sampling_rate, range(-num_taps,num_taps+1))
         
-    sampling_rate = 0.5
-    C = 0.1840
-    t = np.multiply(sampling_rate, range(-num_taps,num_taps+1))
-    
-    f1 = -4*C*t*(-3+ 2*np.square(t))*np.exp(-np.square(t))
-    f2 = t*np.exp(-np.square(t))
-    f3 = -4*C*(-1+ 2*np.square(t))*np.exp(-np.square(t))
-    f4 = np.exp(-np.square(t))
-    f5 = -8*C*t*np.exp(-np.square(t))
-    basis = np.stack((f1, f2, f3, f4, f5), axis=0)
-    basis  = np.fliplr(basis)
+        f1 = -4*C*t*(-3+ 2*np.square(t))*np.exp(-np.square(t))
+        f2 = t*np.exp(-np.square(t))
+        f3 = -4*C*(-1+ 2*np.square(t))*np.exp(-np.square(t))
+        f4 = np.exp(-np.square(t))
+        f5 = -8*C*t*np.exp(-np.square(t))
+        basis = np.stack((f1, f2, f3, f4, f5), axis=0)
+        basis  = np.fliplr(basis)
+    elif filter_type is "G2":
+        sampling_rate = 0.67
+        C = 0.41146
+        t = np.multiply(sampling_rate, range(-num_taps,num_taps+1))
+        f1 = C*(2*np.square(t)-1)*np.exp(-np.square(t))
+        f2 = np.exp(-np.square(t))
+        f3 = 2*C*t*np.exp(-np.square(t))
+        f4 = t*np.exp(-np.square(t))
+        basis = np.stack((f1, f2, f3, f4), axis=0)
+        basis  = np.fliplr(basis)
+        
 
     #basis = tf.Variable(basis, dtype=tf.float32, name)
     return basis
+
+def initSeparableFilters_SO (name, num_taps, filter_type):
+    if filter_type is "G3":       
+        sampling_rate = 0.5
+        t = np.multiply(sampling_rate, range(-num_taps,num_taps+1))
+        
+        f1 = (2.472*t - (1.648*np.power(t,3)))*np.exp(-np.square(t))
+        f2 = t*np.exp(-np.square(t))
+        f3 = (0.824 - (1.648*np.power(t,2)))*np.exp(-np.square(t))
+        f4 = np.exp(-np.square(t))
+        
+        basis = np.stack((f1, f2, f3, f4), axis=0)
+        basis  = np.fliplr(basis)
+    elif filter_type is "G2":
+        sampling_rate = 0.67
+        t = np.multiply(sampling_rate, range(-num_taps,num_taps+1))
+        
+        f1 = 0.9213*((2*np.power(t,2))-1)*np.exp(-np.square(t))
+        f2 = np.exp(-np.square(t))
+        f3 = 1.3575*t*np.exp(-np.square(t))
+        
+        basis = np.stack((f1, f2, f3), axis=0)
+        basis  = np.fliplr(basis)
+    
+    return basis
+
+def initBiases(name, L):
+    
+    init = tf.zeros_initializer()
+        
+    if (cfg.REC_STYLE is 'two_path') and (L == 0):
+        bias = tf.get_variable(name, shape=[cfg.NUM_DIRECTIONS*np.power(2,L)], initializer = init, trainable=False, dtype=np.float32)
+    elif (cfg.REC_STYLE is 'two_path') and (L > 0):
+        bias = tf.get_variable(name, shape=[cfg.NUM_DIRECTIONS*cfg.NUM_DIRECTIONS*np.power(2,L)], initializer = init, trainable=False, dtype=np.float32)
+    elif (cfg.REC_STYLE is 'simple') and (L == 0):
+        bias = tf.get_variable(name, shape=[cfg.NUM_DIRECTIONS], initializer = init, trainable=False, dtype=np.float32)
+    elif (cfg.REC_STYLE is 'simple') and (L > 0):
+        bias = tf.get_variable(name, shape=[cfg.NUM_DIRECTIONS*cfg.NUM_DIRECTIONS], initializer = init, trainable=False, dtype=np.float32)
+        
+    return bias
