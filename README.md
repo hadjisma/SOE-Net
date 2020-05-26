@@ -1,11 +1,13 @@
-#ReadMe
-This ReadMe file explains how to use the code for trainable SOE-Net
+## SOE-Net
+
+This ReadMe file explains how to use the code for trainable SOE-Net.
+
 work by Isma Hadji (hadjisma@cse.yorku.ca) 
 ========================================================================================================================
 
 * This folder contain all necessary functions to build SOE-Net
 
-##Requirements:
+## Requirements:
 
 * This code has been tested under the following environment settings:
 	- cuda 9.0
@@ -32,16 +34,16 @@ work by Isma Hadji (hadjisma@cse.yorku.ca)
 
 * This code can be used to extract features to be used with the video segmentation code.
 
-## Helper script:
 
-The **shell_script_helpers** folder contains helper bash scripts that automate the entire process:
-- **Video2Clips.sh** is a helper bash script to prepare input data pipeline. (i.e. convert videos to clips that are fed to SOE_Net)
-- **SOE_MSOE_demo.sh** calls all necessary functions (including the data preparation scripts **Video2Clips.sh**) to extract the desired features.
-	It needs as input:
-	1) root_path:  a path to a datasets folder
-	2) dataset: a dataset folder
-	3) vid_name: a sample video to be used for testing. However, if no video name is provided the script will run over the entire dataset.
-* For example, to extract all different features for the birdfall video call the script as: `SOE_MSOE_demo.sh /path/to/data dataset birdfall`
+## Citation
 
+* if you use this code in your research please cite the corresponding paper:
 
-
+```
+@{Hadji2017,
+author={I. Hadji and R. P. Wildes},
+title={A Spatiotemporal Oriented Energy Network for Dynamic Texture Recognition},
+booktitle={ICCV}
+year={2017}
+}
+```
